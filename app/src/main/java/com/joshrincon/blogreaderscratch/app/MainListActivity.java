@@ -9,18 +9,18 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.text.Html;
 import android.util.Log;
 import android.view.View;
 import android.widget.*;
-import com.joshrincon.blogreaderscratch.helper.RSSParser;
+import com.google.code.rome.android.repackaged.com.sun.syndication.feed.synd.SyndEntry;
+import com.google.code.rome.android.repackaged.com.sun.syndication.feed.synd.SyndFeed;
+import com.joshrincon.blogreaderscratch.helper.RssAtomFeedRetriever;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -29,8 +29,6 @@ public class MainListActivity extends ListActivity {
 
     public static final int NUMBER_OF_POSTS = 20;
     public static final String TAG = MainListActivity.class.getSimpleName();
-    protected List<ArrayList<String>> mRSSData = new ArrayList<ArrayList<String>>();
-    protected List<String> mRSSLinks = new ArrayList<String>();
     protected ProgressBar mProgressBar;
     private final String KEY_TITLE = "title";
     private final String KEY_LINK = "link";
@@ -51,16 +49,6 @@ public class MainListActivity extends ListActivity {
         } else {
             Toast.makeText(this, "Network is unavailable.", Toast.LENGTH_LONG).show();
         }
-
-        /*Resources resources = getResources();
-        mBlogPostTitles = resources.getStringArray(R.array.android_names);
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mBlogPostTitles);
-        setListAdapter(adapter);
-        */
-
-        /*String message = getString(R.string.no_items);
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show();*/
     }
 
     @Override
@@ -102,31 +90,25 @@ public class MainListActivity extends ListActivity {
         return isAvailable;
     }
 
-    private void handleRSSResponse() {
+    private void handleRSSResponse(SyndFeed feed) {
 
         mProgressBar.setVisibility(View.INVISIBLE);
 
-        if(mRSSData == null) {
+        if(feed == null) {
             updateDisplayForError();
         } else {
             try {
                 ArrayList<HashMap<String, String>> rssPosts =
                         new ArrayList<HashMap<String, String>>();
-                for (int i = 0; i < mRSSData.size()-1; i++) {
-                    List<String> getTitle = mRSSData.get(i);
-                    List<String> getLink = mRSSData.get(i+1);
-                    String title = "";
-                    String link = "";
-                    for(int p = 0; p < getTitle.size(); p++) {
-                        title = Html.fromHtml(getTitle.get(p)).toString();
-                        link = Html.fromHtml(getLink.get(p)).toString();
+                for (SyndEntry entry : (List<SyndEntry>) feed.getEntries()) {
+                        String title = entry.getTitle();
+                        String link = entry.getUri();
+
                         System.out.println("THIS IS FROM HANDLERSS RESPONSE" + title + link);
                         HashMap<String, String> rssPost = new HashMap<String, String>();
                         rssPost.put(KEY_TITLE, title);
                         rssPost.put(KEY_LINK, link);
                         rssPosts.add(rssPost);
-
-                    }
                 }
 
                 String[] keys  = {KEY_TITLE, KEY_LINK};
@@ -153,20 +135,14 @@ public class MainListActivity extends ListActivity {
         emptyTextView.setText(getString(R.string.no_items));
     }
 
-    private class GetRSSPostsTask extends AsyncTask<Object, Void, List<ArrayList<String>>> {
+    private class GetRSSPostsTask extends AsyncTask<Object, Void, String> {
+
+        private SyndFeed feed;
 
         @Override
-        protected List<ArrayList<String>> doInBackground(Object[] objects) {
+        protected String doInBackground(Object[] objects) {
 
             int responseCode;
-
-            List<ArrayList<String>> sourceCode = new ArrayList<ArrayList<String>>();
-
-            ArrayList<String> listTitles;
-            ArrayList<String> listLinks;
-
-            String tempTitle = "";
-            String tempLink = "";
 
             try {
                 URL rssFeedUrl = new URL("http://feeds.feedburner.com/TechCrunch/startups");
@@ -177,16 +153,10 @@ public class MainListActivity extends ListActivity {
 
                 if (responseCode == HttpURLConnection.HTTP_OK) {
 
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(rssFeedUrl.openStream()));
+                    RssAtomFeedRetriever rssAtomFeedRetriever = new RssAtomFeedRetriever();
+                    feed = rssAtomFeedRetriever.getMostRecentNews("http://feeds.feedburner.com/TechCrunch/startups");
 
-                    String line;
-                    RSSParser rssParser = new RSSParser();
-                    while ((line = reader.readLine()) != null) {
-                        rssParser.RSSHandler(line);
-                    }
-                    tempTitle = rssParser.getTitle();
-                    tempLink = rssParser.getLink();
-
+                    System.out.println("FROM ASYNCTASK" + feed.getEntries());
 
                 } else{
                     Log.i(TAG, "Unsuccessful HTTP Response Code: " + responseCode);
@@ -204,21 +174,13 @@ public class MainListActivity extends ListActivity {
                 e.printStackTrace();
             }
 
-            List<String> titles = Arrays.asList(tempTitle.split("\\n"));
-            listTitles = new ArrayList<String>(titles);
-            sourceCode.add(listTitles);
-
-            List<String> links = Arrays.asList(tempLink.split("\\n"));
-            listLinks = new ArrayList<String>(links);
-            sourceCode.add(listLinks);
-
-            return sourceCode;
+            return null;
         }
 
         @Override
-        protected void onPostExecute(List<ArrayList<String>> result) {
-            mRSSData = result;
-            handleRSSResponse();
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            handleRSSResponse(feed);
         }
     }
 }
