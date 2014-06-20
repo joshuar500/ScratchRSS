@@ -32,6 +32,7 @@ public class MainListActivity extends ListActivity {
     protected ProgressBar mProgressBar;
     private final String KEY_TITLE = "title";
     private final String KEY_LINK = "link";
+    private SyndFeed feed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,15 +58,17 @@ public class MainListActivity extends ListActivity {
 
 
         try {
-            String blogURL = "http://www.google.com";
+            // get position of what user is choosing and set url
+            SyndEntry getFeedPos = (SyndEntry) feed.getEntries().get(position);
+            String rssTitle = getFeedPos.getTitle();
+            String rssDesc = getFeedPos.getDescription().getValue();
 
-            //explicitly say to open blogwebviewactivity class as opposed to "implying"
+            String rssUrl = getFeedPos.getUri();
+
             Intent intent = new Intent(this, RSSViewActivity.class);
-            intent.setData(Uri.parse(blogURL));
-
-            /* THIS OPENS A WEB BROWSER
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setData(Uri.parse(blogURL));*/
+            intent.setData(Uri.parse(rssUrl));
+            intent.putExtra("EXTRA_TITLE", rssTitle);
+            intent.putExtra("EXTRA_DESC", rssDesc);
 
             startActivity(intent);
         } catch (Exception e) {
@@ -136,8 +139,6 @@ public class MainListActivity extends ListActivity {
     }
 
     private class GetRSSPostsTask extends AsyncTask<Object, Void, String> {
-
-        private SyndFeed feed;
 
         @Override
         protected String doInBackground(Object[] objects) {
