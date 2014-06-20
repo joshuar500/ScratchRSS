@@ -20,7 +20,10 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -33,6 +36,7 @@ public class MainListActivity extends ListActivity {
     private final String KEY_TITLE = "title";
     private final String KEY_LINK = "link";
     private SyndFeed feed;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,12 +67,17 @@ public class MainListActivity extends ListActivity {
             String rssTitle = getFeedPos.getTitle();
             String rssDesc = getFeedPos.getDescription().getValue();
 
+            Date publishedDate = getFeedPos.getPublishedDate();
+            DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+            String rssDate = df.format(publishedDate);
+
             String rssUrl = getFeedPos.getUri();
 
             Intent intent = new Intent(this, RSSViewActivity.class);
             intent.setData(Uri.parse(rssUrl));
             intent.putExtra("EXTRA_TITLE", rssTitle);
             intent.putExtra("EXTRA_DESC", rssDesc);
+            intent.putExtra("EXTRA_DATE", rssDate);
 
             startActivity(intent);
         } catch (Exception e) {

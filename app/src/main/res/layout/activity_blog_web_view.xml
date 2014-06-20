@@ -9,12 +9,19 @@
             android:layout_height="match_parent"
             android:id="@+id/coolWebView"
             android:layout_alignParentStart="true"
-            android:layout_below="@+id/titleTextView"/>
+            android:layout_below="@+id/dateTextView"/>
     <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text=""
             android:id="@+id/titleTextView"
+            android:layout_alignParentStart="true"/>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Text"
+            android:id="@+id/dateTextView"
+            android:layout_below="@+id/titleTextView"
             android:layout_alignParentStart="true"/>
     <ViewStub
             android:layout_width="wrap_content"

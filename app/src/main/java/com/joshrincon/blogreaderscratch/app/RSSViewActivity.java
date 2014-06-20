@@ -16,7 +16,9 @@ public class RSSViewActivity extends Activity {
     protected String mUrl;
     protected String mTitle;
     protected String mDesc;
+    protected String mDate;
     private TextView tTitle;
+    private TextView tDate;
     private WebView webView;
 
     @Override
@@ -30,9 +32,13 @@ public class RSSViewActivity extends Activity {
 
         mTitle = intent.getExtras().getString("EXTRA_TITLE");
         mDesc = intent.getExtras().getString("EXTRA_DESC");
+        mDate = intent.getExtras().getString("EXTRA_DATE");
 
         tTitle = (TextView) findViewById(R.id.titleTextView);
         tTitle.setText(mTitle);
+
+        tDate = (TextView) findViewById(R.id.dateTextView);
+        tDate.setText(mDate);
 
         webView = (WebView) findViewById(R.id.coolWebView);
         webView.loadData(customHtml() + mDesc + "</body></html>", "text/html", "UTF-8");
