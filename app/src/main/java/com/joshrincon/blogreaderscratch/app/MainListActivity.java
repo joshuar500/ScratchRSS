@@ -15,6 +15,7 @@ import android.widget.*;
 import com.google.code.rome.android.repackaged.com.sun.syndication.feed.synd.SyndEntry;
 import com.google.code.rome.android.repackaged.com.sun.syndication.feed.synd.SyndFeed;
 import com.joshrincon.blogreaderscratch.helper.RssAtomFeedRetriever;
+import com.joshrincon.blogreaderscratch.helper.RssSortByDate;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -22,21 +23,21 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 
 public class MainListActivity extends ListActivity {
 
     public static final int NUMBER_OF_POSTS = 20;
     public static final String TAG = MainListActivity.class.getSimpleName();
+    private static final RssSortByDate sortByDate = new RssSortByDate();
     protected ProgressBar mProgressBar;
     private final String KEY_TITLE = "title";
     private final String KEY_LINK = "link";
     private SyndFeed feed;
-
+    private ArrayList<SyndFeed> feedS = new ArrayList<SyndFeed>();
+    private ArrayList<SyndEntry> entrieS = new ArrayList<SyndEntry>();
+    private ArrayList<String> mUrls;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +45,12 @@ public class MainListActivity extends ListActivity {
         setContentView(R.layout.activity_main_list);
 
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+
+        mUrls = new ArrayList<String>();
+
+        // TODO: Create button that adds/removes feeds
+        mUrls.add("http://feeds.feedburner.com/TechCrunch/startups");
+        mUrls.add("http://feeds.feedburner.com/TechCrunch/android");
 
         if (isNetworkAvailable()) {
             mProgressBar.setVisibility(View.VISIBLE);
@@ -63,7 +70,9 @@ public class MainListActivity extends ListActivity {
 
         try {
             // get position of what user is choosing and set url
-            SyndEntry getFeedPos = (SyndEntry) feed.getEntries().get(position);
+
+            SyndEntry getFeedPos = (SyndEntry) entrieS.get(position);
+
             String rssTitle = getFeedPos.getTitle();
             String rssDesc = getFeedPos.getDescription().getValue();
 
@@ -102,17 +111,21 @@ public class MainListActivity extends ListActivity {
         return isAvailable;
     }
 
-    private void handleRSSResponse(SyndFeed feed) {
+    private void handleRSSResponse(ArrayList<SyndEntry> entries) {
 
         mProgressBar.setVisibility(View.INVISIBLE);
 
-        if(feed == null) {
+        if(mUrls == null) {
             updateDisplayForError();
         } else {
             try {
+
+                Collections.sort(entrieS, sortByDate);
+
                 ArrayList<HashMap<String, String>> rssPosts =
                         new ArrayList<HashMap<String, String>>();
-                for (SyndEntry entry : (List<SyndEntry>) feed.getEntries()) {
+
+                    for (SyndEntry entry : entries) {
                         String title = entry.getTitle();
                         String link = entry.getUri();
 
@@ -121,7 +134,8 @@ public class MainListActivity extends ListActivity {
                         rssPost.put(KEY_TITLE, title);
                         rssPost.put(KEY_LINK, link);
                         rssPosts.add(rssPost);
-                }
+                    }
+
 
                 String[] keys  = {KEY_TITLE, KEY_LINK};
                 int[] ids = { android.R.id.text1, android.R.id.text2};
@@ -147,32 +161,38 @@ public class MainListActivity extends ListActivity {
         emptyTextView.setText(getString(R.string.no_items));
     }
 
-    private class GetRSSPostsTask extends AsyncTask<Object, Void, String> {
+    private class GetRSSPostsTask extends AsyncTask<Object, Void, ArrayList<String>> {
 
         @Override
-        protected String doInBackground(Object[] objects) {
+        protected ArrayList<String> doInBackground(Object[] objects) {
 
             int responseCode;
 
             try {
-                URL rssFeedUrl = new URL("http://feeds.feedburner.com/TechCrunch/startups");
+
+                URL rssFeedUrl = new URL(mUrls.get(0));
                 HttpURLConnection connection = (HttpURLConnection) rssFeedUrl.openConnection();
                 connection.connect();
 
                 responseCode = connection.getResponseCode();
 
                 if (responseCode == HttpURLConnection.HTTP_OK) {
+                    for(String url: mUrls) {
+                        RssAtomFeedRetriever rssAtomFeedRetriever = new RssAtomFeedRetriever();
+                        feed = rssAtomFeedRetriever.getMostRecentNews(url);
+                        feedS.add(feed);
 
-                    RssAtomFeedRetriever rssAtomFeedRetriever = new RssAtomFeedRetriever();
-                    feed = rssAtomFeedRetriever.getMostRecentNews("http://feeds.feedburner.com/TechCrunch/startups");
-
-                    System.out.println("FROM ASYNCTASK" + feed.getEntries());
+                        System.out.println("FROM ASYNCTASK" + feed.getTitle());
+                    }
+                    for(SyndFeed f : feedS) {
+                        for (SyndEntry entry : (List<SyndEntry>) f.getEntries()) {
+                            entrieS.add(entry);
+                        }
+                    }
 
                 } else{
                     Log.i(TAG, "Unsuccessful HTTP Response Code: " + responseCode);
                 }
-
-
             } catch (MalformedURLException e) {
                 logException(e);
                 e.printStackTrace();
@@ -184,13 +204,15 @@ public class MainListActivity extends ListActivity {
                 e.printStackTrace();
             }
 
+
+
             return null;
         }
 
         @Override
-        protected void onPostExecute(String result) {
+        protected void onPostExecute(ArrayList<String> result) {
             super.onPostExecute(result);
-            handleRSSResponse(feed);
+            handleRSSResponse(entrieS);
         }
     }
 }
