@@ -1,9 +1,7 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.joshrincon.blogreaderscratch.app.MainListActivity" >
-    <item android:id="@+id/action_settings"
-        android:title="@string/action_settings"
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/action_addFeed"
+        android:title="@string/action_addFeed"
         android:orderInCategory="100"
-        app:showAsAction="never" />
+        android:icon="@drawable/ic_content_new"
+        android:showAsAction="always" />
 </menu>

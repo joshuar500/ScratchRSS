@@ -3,17 +3,23 @@ package com.joshrincon.blogreaderscratch.app;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
 import com.google.code.rome.android.repackaged.com.sun.syndication.feed.synd.SyndEntry;
 import com.google.code.rome.android.repackaged.com.sun.syndication.feed.synd.SyndFeed;
+import com.google.code.rome.android.repackaged.com.sun.syndication.io.SyndFeedInput;
+import com.google.code.rome.android.repackaged.com.sun.syndication.io.XmlReader;
 import com.joshrincon.blogreaderscratch.helper.RssAtomFeedRetriever;
 import com.joshrincon.blogreaderscratch.helper.RssSortByDate;
 
@@ -34,6 +40,7 @@ public class MainListActivity extends ListActivity {
     protected ProgressBar mProgressBar;
     private final String KEY_TITLE = "title";
     private final String KEY_LINK = "link";
+    private final String KEY_PREFURL = "url_";
     private SyndFeed feed;
     private ArrayList<SyndFeed> feedS = new ArrayList<SyndFeed>();
     private ArrayList<SyndEntry> entrieS = new ArrayList<SyndEntry>();
@@ -46,18 +53,17 @@ public class MainListActivity extends ListActivity {
 
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
 
-        mUrls = new ArrayList<String>();
-
         // TODO: Create button that adds/removes feeds
-        mUrls.add("http://feeds.feedburner.com/TechCrunch/startups");
-        mUrls.add("http://feeds.feedburner.com/TechCrunch/android");
+        //mUrls.add("http://feeds.feedburner.com/TechCrunch/startups");
+        //mUrls.add("http://feeds.feedburner.com/TechCrunch/android");
+
+        loadUrls(this);
 
         if (isNetworkAvailable()) {
             mProgressBar.setVisibility(View.VISIBLE);
 
             GetRSSPostsTask getRSSPostsTask = new GetRSSPostsTask();
             getRSSPostsTask.execute();
-
         } else {
             Toast.makeText(this, "Network is unavailable.", Toast.LENGTH_LONG).show();
         }
@@ -66,7 +72,6 @@ public class MainListActivity extends ListActivity {
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
-
 
         try {
             // get position of what user is choosing and set url
@@ -115,9 +120,14 @@ public class MainListActivity extends ListActivity {
 
         mProgressBar.setVisibility(View.INVISIBLE);
 
+        saveUrls(this);
+
         if(mUrls == null) {
             updateDisplayForError();
         } else {
+
+            saveUrls(this);
+
             try {
 
                 Collections.sort(entrieS, sortByDate);
@@ -170,16 +180,17 @@ public class MainListActivity extends ListActivity {
 
             try {
 
-                URL rssFeedUrl = new URL(mUrls.get(0));
-                HttpURLConnection connection = (HttpURLConnection) rssFeedUrl.openConnection();
+                URL testURL = new URL(mUrls.get(0));
+                HttpURLConnection connection = (HttpURLConnection) testURL.openConnection();
                 connection.connect();
 
                 responseCode = connection.getResponseCode();
 
                 if (responseCode == HttpURLConnection.HTTP_OK) {
-                    for(String url: mUrls) {
-                        RssAtomFeedRetriever rssAtomFeedRetriever = new RssAtomFeedRetriever();
-                        feed = rssAtomFeedRetriever.getMostRecentNews(url);
+                    for(int i=0; i < mUrls.size(); i++) {
+                        URL rssFeedUrl = new URL(mUrls.get(i));
+                        SyndFeedInput input = new SyndFeedInput();
+                        feed = input.build(new XmlReader(rssFeedUrl));
                         feedS.add(feed);
 
                         System.out.println("FROM ASYNCTASK" + feed.getTitle());
@@ -204,8 +215,6 @@ public class MainListActivity extends ListActivity {
                 e.printStackTrace();
             }
 
-
-
             return null;
         }
 
@@ -214,5 +223,106 @@ public class MainListActivity extends ListActivity {
             super.onPostExecute(result);
             handleRSSResponse(entrieS);
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main_list, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        if (id == R.id.action_addFeed) {
+            addRssFeedDialog();
+            System.out.println("ACTION ADDFEED CLICKED");
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void addRssFeedDialog() {
+        AlertDialog.Builder alert = new AlertDialog.Builder(MainListActivity.this);
+
+        alert.setTitle("Add feed");
+        alert.setMessage("Please add Url with http:// in front.");
+
+        final EditText input = new EditText(MainListActivity.this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT);
+        input.setLayoutParams(lp);
+        alert.setView(input);
+
+        alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                String value = input.getText().toString();
+                addFeedToList(value);
+            }
+        });
+
+        alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.cancel();
+            }
+        });
+
+        alert.show();
+    }
+
+    private void addFeedToList(String input) {
+        // TODO:if starts with http://
+
+        mUrls.add(input);
+
+        if (isNetworkAvailable()) {
+            mProgressBar.setVisibility(View.VISIBLE);
+
+            GetRSSPostsTask getRSSPostsTask = new GetRSSPostsTask();
+            getRSSPostsTask.execute();
+
+        } else {
+            Toast.makeText(this, "Network is unavailable.", Toast.LENGTH_LONG).show();
+        }
+
+    }
+
+    public void saveUrls(Context context) {
+        SharedPreferences settings = context.getSharedPreferences("URLS", 0);
+        SharedPreferences.Editor editor = settings.edit();
+
+        int size = mUrls.size();
+        editor.putInt("numOfUrls", size);
+
+        //clear saved preferences first
+        for(int i = 0; i < size; i++) {
+            editor.remove(KEY_PREFURL + i);
+        }
+
+        //once cleared, add new values
+        for(int i = 0; i < size; i++) {
+            editor.putString(KEY_PREFURL, mUrls.get(i));
+        }
+
+        editor.commit();
+    }
+
+    public ArrayList<String> loadUrls(Context context) {
+        SharedPreferences file = context.getSharedPreferences("URLS", 0);
+        mUrls = new ArrayList<String>();
+        int size = file.getInt("numOfUrls", 0);
+
+        for(int i = 0; i < size; i++) {
+            String url = file.getString(KEY_PREFURL, "https://s3.amazonaws.com/USACWeb/rss/headlines.rss");
+            mUrls.add(url);
+        }
+
+        return mUrls;
     }
 }

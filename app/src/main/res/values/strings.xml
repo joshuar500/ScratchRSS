@@ -4,6 +4,7 @@
     <string name="app_name">BlogReaderScratch</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="action_addFeed">Add Feed</string>
     <string name="action_share">Share</string>
     <string name="no_items">No items to display!</string>
 
