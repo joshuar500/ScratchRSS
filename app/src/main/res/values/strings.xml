@@ -22,5 +22,6 @@
     <string name="title">Oops! Sorry!</string>
     <string name="error_message">There was an error getting data from the blog.</string>
     <string name="title_activity_blog_web_view">Blog Post</string>
+    <string name="title_activity_list_feed">ListFeedActivity</string>
 
 </resources>

@@ -19,8 +19,12 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".RSSViewActivity"
+            android:name="com.joshrincon.blogreaderscratch.app.RSSViewActivity"
             android:label="@string/title_activity_blog_web_view" >
+        </activity>
+        <activity
+            android:name="com.joshrincon.blogreaderscratch.app.ListFeedActivity"
+            android:label="@string/title_activity_list_feed" >
         </activity>
     </application>
 

@@ -38,12 +38,12 @@ public class MainListActivity extends ListActivity {
     public static final String TAG = MainListActivity.class.getSimpleName();
     private static final RssSortByDate sortByDate = new RssSortByDate();
     protected ProgressBar mProgressBar;
-    private final String KEY_TITLE = "title";
+    private final String KEY_FEED_TITLE = "feed_title";
     private final String KEY_LINK = "link";
     private final String KEY_PREFURL = "url_";
     private SyndFeed feed;
     private ArrayList<SyndFeed> feedS = new ArrayList<SyndFeed>();
-    private ArrayList<SyndEntry> entrieS = new ArrayList<SyndEntry>();
+
     private ArrayList<String> mUrls;
 
     @Override
@@ -53,9 +53,7 @@ public class MainListActivity extends ListActivity {
 
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
 
-        // TODO: Create button that adds/removes feeds
-        //mUrls.add("http://feeds.feedburner.com/TechCrunch/startups");
-        //mUrls.add("http://feeds.feedburner.com/TechCrunch/android");
+        // TODO: Create button that removes feeds
 
         loadUrls(this);
 
@@ -76,9 +74,13 @@ public class MainListActivity extends ListActivity {
         try {
             // get position of what user is choosing and set url
 
-            SyndEntry getFeedPos = (SyndEntry) entrieS.get(position);
+            String feedUrl = mUrls.get(position);
 
-            String rssTitle = getFeedPos.getTitle();
+            System.out.println(feedUrl);
+            Intent intent = new Intent(this, ListFeedActivity.class);
+            intent.setData(Uri.parse(feedUrl));
+
+            /*String rssTitle = getFeedPos.getTitle();
             String rssDesc = getFeedPos.getDescription().getValue();
 
             Date publishedDate = getFeedPos.getPublishedDate();
@@ -91,7 +93,7 @@ public class MainListActivity extends ListActivity {
             intent.setData(Uri.parse(rssUrl));
             intent.putExtra("EXTRA_TITLE", rssTitle);
             intent.putExtra("EXTRA_DESC", rssDesc);
-            intent.putExtra("EXTRA_DATE", rssDate);
+            intent.putExtra("EXTRA_DATE", rssDate);*/
 
             startActivity(intent);
         } catch (Exception e) {
@@ -116,38 +118,33 @@ public class MainListActivity extends ListActivity {
         return isAvailable;
     }
 
-    private void handleRSSResponse(ArrayList<SyndEntry> entries) {
+    private void handleRSSResponse(ArrayList<SyndFeed> feeds) {
 
         mProgressBar.setVisibility(View.INVISIBLE);
-
-        saveUrls(this);
 
         if(mUrls == null) {
             updateDisplayForError();
         } else {
-
+            //SAVE mURLS with SavedPreferences
             saveUrls(this);
-
             try {
-
-                Collections.sort(entrieS, sortByDate);
 
                 ArrayList<HashMap<String, String>> rssPosts =
                         new ArrayList<HashMap<String, String>>();
 
-                    for (SyndEntry entry : entries) {
-                        String title = entry.getTitle();
-                        String link = entry.getUri();
+                    for (SyndFeed feed : feeds) {
+                        String title = feed.getTitle();
+                        String link = feed.getLink();
 
                         System.out.println("THIS IS FROM HANDLERSS RESPONSE" + title + link);
                         HashMap<String, String> rssPost = new HashMap<String, String>();
-                        rssPost.put(KEY_TITLE, title);
+                        rssPost.put(KEY_FEED_TITLE, title);
                         rssPost.put(KEY_LINK, link);
                         rssPosts.add(rssPost);
                     }
 
 
-                String[] keys  = {KEY_TITLE, KEY_LINK};
+                String[] keys  = {KEY_FEED_TITLE, KEY_LINK};
                 int[] ids = { android.R.id.text1, android.R.id.text2};
                 SimpleAdapter adapter = new SimpleAdapter(this, rssPosts,
                         android.R.layout.simple_list_item_2, keys, ids);
@@ -195,11 +192,11 @@ public class MainListActivity extends ListActivity {
 
                         System.out.println("FROM ASYNCTASK" + feed.getTitle());
                     }
-                    for(SyndFeed f : feedS) {
+                    /*for(SyndFeed f : feedS) {
                         for (SyndEntry entry : (List<SyndEntry>) f.getEntries()) {
                             entrieS.add(entry);
                         }
-                    }
+                    }*/
 
                 } else{
                     Log.i(TAG, "Unsuccessful HTTP Response Code: " + responseCode);
@@ -221,7 +218,7 @@ public class MainListActivity extends ListActivity {
         @Override
         protected void onPostExecute(ArrayList<String> result) {
             super.onPostExecute(result);
-            handleRSSResponse(entrieS);
+            handleRSSResponse(feedS);
         }
     }
 
