@@ -1,11 +1,7 @@
 package com.joshrincon.blogreaderscratch.app;
 
-import android.app.Activity;
 import android.app.ListActivity;
-import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -13,6 +9,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
 import android.widget.Toast;
@@ -20,20 +17,21 @@ import com.google.code.rome.android.repackaged.com.sun.syndication.feed.synd.Syn
 import com.google.code.rome.android.repackaged.com.sun.syndication.feed.synd.SyndFeed;
 import com.google.code.rome.android.repackaged.com.sun.syndication.io.SyndFeedInput;
 import com.google.code.rome.android.repackaged.com.sun.syndication.io.XmlReader;
+import com.joshrincon.blogreaderscratch.helper.RSSHelper;
 import com.joshrincon.blogreaderscratch.helper.RssSortByDate;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 
 public class ListFeedActivity extends ListActivity {
 
+    public static final String TAG = ListFeedActivity.class.getSimpleName();
     protected String mUrl;
     private SyndFeed feed;
     protected ProgressBar mProgressBar;
@@ -41,6 +39,7 @@ public class ListFeedActivity extends ListActivity {
     private ArrayList<SyndEntry> entrieS = new ArrayList<SyndEntry>();
     private final String KEY_ENTRY_TITLE = "feed_title";
     private final String KEY_LINK = "link";
+    RSSHelper rssHelper = new RSSHelper();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +54,7 @@ public class ListFeedActivity extends ListActivity {
 
         System.out.println("GOT URL FROM LISTACTIVITY" + mUrl);
 
-        if (isNetworkAvailable()) {
+        if (rssHelper.isNetworkAvailable()) {
             mProgressBar.setVisibility(View.VISIBLE);
 
             GetRSSPostsTask getRSSPostsTask = new GetRSSPostsTask();
@@ -85,19 +84,34 @@ public class ListFeedActivity extends ListActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private boolean isNetworkAvailable() {
-        ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = manager.getActiveNetworkInfo();
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
 
-        boolean isAvailable = false;
+        try {
+            // get position of what user is choosing and set url
 
-        if (networkInfo != null && networkInfo.isConnected()) {
-            isAvailable = true;
+            SyndEntry getFeedPos = entrieS.get(position);
+
+            String rssTitle = getFeedPos.getTitle();
+            String rssDesc = getFeedPos.getDescription().getValue();
+
+            Date publishedDate = getFeedPos.getPublishedDate();
+            DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+            String rssDate = df.format(publishedDate);
+
+            String rssUri = getFeedPos.getUri();
+
+            Intent intent = new Intent(this, RSSViewActivity.class);
+            intent.setData(Uri.parse(rssUri));
+            intent.putExtra("EXTRA_TITLE", rssTitle);
+            intent.putExtra("EXTRA_DESC", rssDesc);
+            intent.putExtra("EXTRA_DATE", rssDate);
+
+            startActivity(intent);
+        } catch (Exception e) {
+            rssHelper.logException(TAG, e);
         }
-
-        System.out.println("NETWORK AVAILABLE LISTACTIVITY" + mUrl);
-
-        return isAvailable;
     }
 
     private class GetRSSPostsTask extends AsyncTask<Object, Void, ArrayList<String>> {
@@ -132,13 +146,13 @@ public class ListFeedActivity extends ListActivity {
                     Log.i("LISTFEEDACTIVITY", "Unsuccessful HTTP Response Code: " + responseCode);
                 }
             } catch (MalformedURLException e) {
-
+                rssHelper.logException(TAG, e);
                 e.printStackTrace();
             } catch (IOException e) {
-
+                rssHelper.logException(TAG, e);
                 e.printStackTrace();
             } catch (Exception e) {
-
+                rssHelper.logException(TAG, e);
                 e.printStackTrace();
             }
 
@@ -158,10 +172,9 @@ public class ListFeedActivity extends ListActivity {
 
 
         if(mUrl == null) {
-            //updateDisplayForError();
+            rssHelper.updateDisplayForError();
             System.out.println("ERROR IN LISTFEEDACTIVITY");
         } else {
-            //SAVE mURLS with SavedPreferences
             try {
 
                 Collections.sort(entrieS, sortByDate);
@@ -188,6 +201,7 @@ public class ListFeedActivity extends ListActivity {
                 setListAdapter(adapter);
 
             } catch (Exception e) {
+                rssHelper.logException(TAG, e);
                 e.printStackTrace();
             }
         }

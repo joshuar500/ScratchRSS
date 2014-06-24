@@ -6,8 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -16,25 +14,21 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.*;
-import com.google.code.rome.android.repackaged.com.sun.syndication.feed.synd.SyndEntry;
 import com.google.code.rome.android.repackaged.com.sun.syndication.feed.synd.SyndFeed;
 import com.google.code.rome.android.repackaged.com.sun.syndication.io.SyndFeedInput;
 import com.google.code.rome.android.repackaged.com.sun.syndication.io.XmlReader;
-import com.joshrincon.blogreaderscratch.helper.RssAtomFeedRetriever;
+import com.joshrincon.blogreaderscratch.helper.RSSHelper;
 import com.joshrincon.blogreaderscratch.helper.RssSortByDate;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 
 public class MainListActivity extends ListActivity {
 
-    public static final int NUMBER_OF_POSTS = 20;
     public static final String TAG = MainListActivity.class.getSimpleName();
     private static final RssSortByDate sortByDate = new RssSortByDate();
     protected ProgressBar mProgressBar;
@@ -43,6 +37,7 @@ public class MainListActivity extends ListActivity {
     private final String KEY_PREFURL = "url_";
     private SyndFeed feed;
     private ArrayList<SyndFeed> feedS = new ArrayList<SyndFeed>();
+    RSSHelper rssHelper = new RSSHelper();
 
     private ArrayList<String> mUrls;
 
@@ -55,9 +50,10 @@ public class MainListActivity extends ListActivity {
 
         // TODO: Create button that removes feeds
 
+        //Load URLs if they are saved via SavedPreferences
         loadUrls(this);
 
-        if (isNetworkAvailable()) {
+        if (rssHelper.isNetworkAvailable()) {
             mProgressBar.setVisibility(View.VISIBLE);
 
             GetRSSPostsTask getRSSPostsTask = new GetRSSPostsTask();
@@ -72,50 +68,16 @@ public class MainListActivity extends ListActivity {
         super.onListItemClick(l, v, position, id);
 
         try {
-            // get position of what user is choosing and set url
-
+            // Get position of user touch
+            // TODO: this needs to be mapped. currently getting mUrls position and not entrieS position
             String feedUrl = mUrls.get(position);
 
-            System.out.println(feedUrl);
             Intent intent = new Intent(this, ListFeedActivity.class);
             intent.setData(Uri.parse(feedUrl));
-
-            /*String rssTitle = getFeedPos.getTitle();
-            String rssDesc = getFeedPos.getDescription().getValue();
-
-            Date publishedDate = getFeedPos.getPublishedDate();
-            DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-            String rssDate = df.format(publishedDate);
-
-            String rssUrl = getFeedPos.getUri();
-
-            Intent intent = new Intent(this, RSSViewActivity.class);
-            intent.setData(Uri.parse(rssUrl));
-            intent.putExtra("EXTRA_TITLE", rssTitle);
-            intent.putExtra("EXTRA_DESC", rssDesc);
-            intent.putExtra("EXTRA_DATE", rssDate);*/
-
             startActivity(intent);
         } catch (Exception e) {
-            logException(e);
+            rssHelper.logException(TAG, e);
         }
-    }
-
-    private void logException(Exception e) {
-        Log.e(TAG, "Exception caught: ", e);
-    }
-
-    private boolean isNetworkAvailable() {
-        ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = manager.getActiveNetworkInfo();
-
-        boolean isAvailable = false;
-
-        if (networkInfo != null && networkInfo.isConnected()) {
-            isAvailable = true;
-        }
-
-        return isAvailable;
     }
 
     private void handleRSSResponse(ArrayList<SyndFeed> feeds) {
@@ -123,7 +85,7 @@ public class MainListActivity extends ListActivity {
         mProgressBar.setVisibility(View.INVISIBLE);
 
         if(mUrls == null) {
-            updateDisplayForError();
+            rssHelper.updateDisplayForError();
         } else {
             //SAVE mURLS with SavedPreferences
             saveUrls(this);
@@ -151,21 +113,9 @@ public class MainListActivity extends ListActivity {
                 setListAdapter(adapter);
 
             } catch (Exception e) {
-                logException(e);
+                rssHelper.logException(TAG, e);
             }
         }
-    }
-
-    private void updateDisplayForError() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(getString(R.string.title));
-        builder.setMessage(getString(R.string.error_message));
-        builder.setPositiveButton(android.R.string.ok, null);
-        AlertDialog dialog = builder.create();
-        dialog.show();
-
-        TextView emptyTextView = (TextView) getListView().getEmptyView();
-        emptyTextView.setText(getString(R.string.no_items));
     }
 
     private class GetRSSPostsTask extends AsyncTask<Object, Void, ArrayList<String>> {
@@ -184,8 +134,8 @@ public class MainListActivity extends ListActivity {
                 responseCode = connection.getResponseCode();
 
                 if (responseCode == HttpURLConnection.HTTP_OK) {
-                    for(int i=0; i < mUrls.size(); i++) {
-                        URL rssFeedUrl = new URL(mUrls.get(i));
+                    for (String mUrl : mUrls) {
+                        URL rssFeedUrl = new URL(mUrl);
                         SyndFeedInput input = new SyndFeedInput();
                         feed = input.build(new XmlReader(rssFeedUrl));
                         feedS.add(feed);
@@ -202,13 +152,13 @@ public class MainListActivity extends ListActivity {
                     Log.i(TAG, "Unsuccessful HTTP Response Code: " + responseCode);
                 }
             } catch (MalformedURLException e) {
-                logException(e);
+                rssHelper.logException(TAG, e);
                 e.printStackTrace();
             } catch (IOException e) {
-                logException(e);
+                rssHelper.logException(TAG, e);
                 e.printStackTrace();
             } catch (Exception e) {
-                logException(e);
+                rssHelper.logException(TAG, e);
                 e.printStackTrace();
             }
 
@@ -278,7 +228,7 @@ public class MainListActivity extends ListActivity {
 
         mUrls.add(input);
 
-        if (isNetworkAvailable()) {
+        if (rssHelper.isNetworkAvailable()) {
             mProgressBar.setVisibility(View.VISIBLE);
 
             GetRSSPostsTask getRSSPostsTask = new GetRSSPostsTask();
@@ -303,8 +253,8 @@ public class MainListActivity extends ListActivity {
         }
 
         //once cleared, add new values
-        for(int i = 0; i < size; i++) {
-            editor.putString(KEY_PREFURL, mUrls.get(i));
+        for (String mUrl : mUrls) {
+            editor.putString(KEY_PREFURL, mUrl);
         }
 
         editor.commit();
