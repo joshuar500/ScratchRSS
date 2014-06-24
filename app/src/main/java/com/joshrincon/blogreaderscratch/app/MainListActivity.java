@@ -53,7 +53,7 @@ public class MainListActivity extends ListActivity {
         //Load URLs if they are saved via SavedPreferences
         loadUrls(this);
 
-        if (rssHelper.isNetworkAvailable()) {
+        if (rssHelper.isNetworkAvailable(this)) {
             mProgressBar.setVisibility(View.VISIBLE);
 
             GetRSSPostsTask getRSSPostsTask = new GetRSSPostsTask();
@@ -228,7 +228,7 @@ public class MainListActivity extends ListActivity {
 
         mUrls.add(input);
 
-        if (rssHelper.isNetworkAvailable()) {
+        if (rssHelper.isNetworkAvailable(this)) {
             mProgressBar.setVisibility(View.VISIBLE);
 
             GetRSSPostsTask getRSSPostsTask = new GetRSSPostsTask();

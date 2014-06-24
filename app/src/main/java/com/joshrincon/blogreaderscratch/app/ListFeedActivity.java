@@ -54,7 +54,7 @@ public class ListFeedActivity extends ListActivity {
 
         System.out.println("GOT URL FROM LISTACTIVITY" + mUrl);
 
-        if (rssHelper.isNetworkAvailable()) {
+        if (rssHelper.isNetworkAvailable(this)) {
             mProgressBar.setVisibility(View.VISIBLE);
 
             GetRSSPostsTask getRSSPostsTask = new GetRSSPostsTask();

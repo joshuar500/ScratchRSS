@@ -47,8 +47,8 @@ public class RSSHelper extends ListActivity {
         return Log.e(tag, "Exception caught: ", e);
     }
 
-    public boolean isNetworkAvailable() {
-        ConnectivityManager manager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    public boolean isNetworkAvailable(Context c) {
+        ConnectivityManager manager = (ConnectivityManager) c.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = manager.getActiveNetworkInfo();
 
         boolean isAvailable = false;
