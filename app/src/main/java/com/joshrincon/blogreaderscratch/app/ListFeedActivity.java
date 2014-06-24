@@ -37,7 +37,7 @@ public class ListFeedActivity extends ListActivity {
     protected ProgressBar mProgressBar;
     private static final RssSortByDate sortByDate = new RssSortByDate();
     private ArrayList<SyndEntry> entrieS = new ArrayList<SyndEntry>();
-    private final String KEY_ENTRY_TITLE = "feed_title";
+    private final String KEY_ENTRY_TITLE = "entry_title";
     private final String KEY_LINK = "link";
     RSSHelper rssHelper = new RSSHelper();
 
