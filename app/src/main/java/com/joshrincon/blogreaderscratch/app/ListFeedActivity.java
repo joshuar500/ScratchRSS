@@ -52,8 +52,6 @@ public class ListFeedActivity extends ListActivity {
         Uri blogUri = intent.getData();
         mUrl = blogUri.toString();
 
-        System.out.println("GOT URL FROM LISTACTIVITY" + mUrl);
-
         if (rssHelper.isNetworkAvailable(this)) {
             mProgressBar.setVisibility(View.VISIBLE);
 
@@ -135,15 +133,12 @@ public class ListFeedActivity extends ListActivity {
                     SyndFeedInput input = new SyndFeedInput();
                     feed = input.build(new XmlReader(rssFeedUrl));
 
-                    System.out.println("FROM ASYNCTASK" + feed.getTitle());
-
-
                     for (SyndEntry entry : (List<SyndEntry>) feed.getEntries()) {
                         entrieS.add(entry);
                     }
 
                 } else{
-                    Log.i("LISTFEEDACTIVITY", "Unsuccessful HTTP Response Code: " + responseCode);
+                    Log.i(TAG, "Unsuccessful HTTP Response Code: " + responseCode);
                 }
             } catch (MalformedURLException e) {
                 rssHelper.logException(TAG, e);
@@ -172,8 +167,7 @@ public class ListFeedActivity extends ListActivity {
 
 
         if(mUrl == null) {
-            rssHelper.updateDisplayForError();
-            System.out.println("ERROR IN LISTFEEDACTIVITY");
+            rssHelper.updateDisplayForError(this);
         } else {
             try {
 
@@ -186,7 +180,6 @@ public class ListFeedActivity extends ListActivity {
                     String title = entry.getTitle();
                     String link = entry.getUri();
 
-                    System.out.println("THIS IS FROM HANDLERSS RESPONSE" + title + link);
                     HashMap<String, String> rssPost = new HashMap<String, String>();
                     rssPost.put(KEY_ENTRY_TITLE, title);
                     rssPost.put(KEY_LINK, link);

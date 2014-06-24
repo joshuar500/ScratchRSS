@@ -7,10 +7,11 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
+import android.widget.ListView;
 import android.widget.TextView;
 import com.joshrincon.blogreaderscratch.app.R;
 
-public class RSSHelper extends ListActivity {
+public class RSSHelper {
 
     private String line;
     private String title;
@@ -60,15 +61,15 @@ public class RSSHelper extends ListActivity {
         return isAvailable;
     }
 
-    public void updateDisplayForError() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(getString(R.string.title));
-        builder.setMessage(getString(R.string.error_message));
+    public void updateDisplayForError(Context c) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(c);
+        builder.setTitle(c.getString(R.string.title));
+        builder.setMessage(c.getString(R.string.error_message));
         builder.setPositiveButton(android.R.string.ok, null);
         AlertDialog dialog = builder.create();
         dialog.show();
 
-        TextView emptyTextView = (TextView) getListView().getEmptyView();
-        emptyTextView.setText(getString(R.string.no_items));
+        TextView emptyTextView = new TextView(c);
+        emptyTextView.setText(c.getString(R.string.no_items));
     }
 }

@@ -30,7 +30,6 @@ import java.util.*;
 public class MainListActivity extends ListActivity {
 
     public static final String TAG = MainListActivity.class.getSimpleName();
-    private static final RssSortByDate sortByDate = new RssSortByDate();
     protected ProgressBar mProgressBar;
     private final String KEY_FEED_TITLE = "feed_title";
     private final String KEY_LINK = "link";
@@ -85,7 +84,7 @@ public class MainListActivity extends ListActivity {
         mProgressBar.setVisibility(View.INVISIBLE);
 
         if(mUrls == null) {
-            rssHelper.updateDisplayForError();
+            rssHelper.updateDisplayForError(this);
         } else {
             //SAVE mURLS with SavedPreferences
             saveUrls(this);
@@ -98,7 +97,6 @@ public class MainListActivity extends ListActivity {
                         String title = feed.getTitle();
                         String link = feed.getLink();
 
-                        System.out.println("THIS IS FROM HANDLERSS RESPONSE" + title + link);
                         HashMap<String, String> rssPost = new HashMap<String, String>();
                         rssPost.put(KEY_FEED_TITLE, title);
                         rssPost.put(KEY_LINK, link);
@@ -139,15 +137,7 @@ public class MainListActivity extends ListActivity {
                         SyndFeedInput input = new SyndFeedInput();
                         feed = input.build(new XmlReader(rssFeedUrl));
                         feedS.add(feed);
-
-                        System.out.println("FROM ASYNCTASK" + feed.getTitle());
                     }
-                    /*for(SyndFeed f : feedS) {
-                        for (SyndEntry entry : (List<SyndEntry>) f.getEntries()) {
-                            entrieS.add(entry);
-                        }
-                    }*/
-
                 } else{
                     Log.i(TAG, "Unsuccessful HTTP Response Code: " + responseCode);
                 }
@@ -187,7 +177,6 @@ public class MainListActivity extends ListActivity {
         int id = item.getItemId();
         if (id == R.id.action_addFeed) {
             addRssFeedDialog();
-            System.out.println("ACTION ADDFEED CLICKED");
         }
         return super.onOptionsItemSelected(item);
     }
